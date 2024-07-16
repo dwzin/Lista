@@ -133,19 +133,30 @@ app.get('/gotostore', (req, res) => {
       res.redirect('/store');
     });
 
-app.post('/checkout', async (req,res) => {
-  stripe.charges.create({
-    amount: totalPrice,
-    currency: 'brl',
-    source: 'tok_visa', 
-    description: 'Testing chage',
-  })
-  .then(charge => console.log(charge))
-  res.send("Transction Concluded, \n Price:" + totalPrice)
-  res.redirect("/store")
-  .catch(error => console.error(error));
-  
-})
+    app.post('/checkout', async (req, res) => {
+      try {
+        
+        const charge = await stripe.charges.create({
+          amount: totalPrice,
+          currency: 'usd',
+          source: 'tok_visa',  
+          description: 'Testing charge',
+        });
+    
+
+        console.log(charge);
+    
+        
+        res.send(`Transaction Concluded, Price: ${totalPrice}`);
+    
+        
+        res.redirect('/store');
+      } catch (error) {
+        
+        console.error(error);
+        res.status(500).send('Erro ao processar pagamento');
+      }
+    });
 
 
 
