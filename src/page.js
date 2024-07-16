@@ -4,6 +4,7 @@ const ejs = require('ejs');
 const session = require('express-session');
 const knex = require('knex');
 const knexConfig = require('../knexfile');
+const stripe = require('stripe')('sk_test_51PdJpwB9ySyyZu5hXto3U9uvu2dCHQVj46y7DMrz597d2ebZjIJNW5Ue49zMw7TvH1lYxHYAb6j3OmWVdZZ9d15X00FWMP3pJK');
 
 const app = express();
 const port = 3000;
@@ -31,22 +32,18 @@ app.post('/addToCart', async (req, res) => {
 
     console.log(`Preço total atualizado: R$${totalPrice.toFixed(2)}`);
 
-    // Retrieve user ID from session
     const userId = req.session.user.id;
 
     try {
-        // Check if there's already a cart entry for this user
         const cartEntry = await db("carrinho")
             .where({ user_id: userId })
             .first();
 
         if (cartEntry) {
-            // If there's already an entry, update the total price
             await db("carrinho")
                 .where({ user_id: userId })
                 .update({ total: totalPrice });
         } else {
-            // If no entry exists, insert a new one
             await db("carrinho").insert({ user_id: userId, total: totalPrice });
         }
 
@@ -65,7 +62,7 @@ app.get('/store', (req, res) => {
             user: req.session.user 
         });
     } else {
-        res.redirect('/login');
+        res.redirect('/');
     }
 });
 
@@ -128,13 +125,27 @@ app.get('/logout', (req, res) => {
     if (err) {
       console.error('Error destroying session:', err);
     }
-    res.redirect('/login');
+    res.redirect('/');
   });
 });
 
 app.get('/gotostore', (req, res) => {
       res.redirect('/store');
     });
+
+app.post('/checkout', async (req,res) => {
+  stripe.charges.create({
+    amount: totalPrice,
+    currency: 'brl',
+    source: 'tok_visa', 
+    description: 'Testing chage',
+  })
+  .then(charge => console.log(charge))
+  res.send("Transction Concluded, \n Price:" + totalPrice)
+  res.redirect("/store")
+  .catch(error => console.error(error));
+  
+})
 
 
 
